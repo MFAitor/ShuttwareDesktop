@@ -14,10 +14,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -61,7 +66,7 @@ public class vistaInforme extends javax.swing.JFrame {
         jPanel4.setBackground(new java.awt.Color(255, 255, 255, 230));
         jPanel5.setOpaque(true);
         jPanel5.setBackground(new java.awt.Color(255, 255, 255, 230));
-        
+
         redondearPanel(panelSesiones, 210, 25);
         redondearPanel(panelFiltro, 210, 25);
 
@@ -173,9 +178,13 @@ public class vistaInforme extends javax.swing.JFrame {
         private Image imagen;
 
         public PanelImagen(String ruta) {
-            URL url = vistaPreview.class.getResource(ruta);
-            if (url != null) {
-                imagen = new ImageIcon(url).getImage();
+            File f = controlador.RutasUtil.resolver(ruta);
+            if (f != null && f.exists()) {
+                try (InputStream is = new FileInputStream(f)) {
+                    imagen = ImageIO.read(is);
+                } catch (IOException e) {
+                    imagen = null;
+                }
             }
         }
 

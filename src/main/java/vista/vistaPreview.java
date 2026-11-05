@@ -179,8 +179,8 @@ public class vistaPreview extends javax.swing.JFrame {
 
         //Se carga la imagen en caso de existir el archivo 
         public PanelImagen(String ruta) {
-            File f = new File(ruta);
-            if (f.exists()) {
+            File f = controlador.RutasUtil.resolver(ruta);
+            if (f != null && f.exists()) {
                 try (InputStream is = new FileInputStream(f)) {
                     imagen = ImageIO.read(is);
                 } catch (IOException e) {
@@ -243,7 +243,8 @@ public class vistaPreview extends javax.swing.JFrame {
 
         JLabel foto = new JLabel();
         foto.setPreferredSize(new Dimension(64, 64));
-        File f = new File(p.getRuta());
+        //
+        File f = controlador.RutasUtil.resolver(p.getRuta());
         System.out.println(p.getRuta() + "  existe: " + f.exists());
         //Se hace la lectura de las imagenes por Streams
         if (f.exists()) {
@@ -597,7 +598,7 @@ public class vistaPreview extends javax.swing.JFrame {
         chooser.setFileFilter(new FileNameExtensionFilter(
                 "Imagenes", "jpg", "jpeg", "png"));
 
-        //Se carga la ultima carpeta a la que se ha viajado para cargar una preview
+        //Cargar ultima carpeta
         String ultimaCarpeta = controlador.Preferencias.cargar("ultima_carpeta_preview", null);
         if (ultimaCarpeta != null) {
             File dir = new File(ultimaCarpeta);
@@ -611,15 +612,27 @@ public class vistaPreview extends javax.swing.JFrame {
         }
 
         File seleccionado = chooser.getSelectedFile();
-        rutaNueva = seleccionado.getAbsolutePath();
 
-        //Se guarda en la BD de preferencias la ruta de la carpeta escogida para la siguiente vez
-        controlador.Preferencias.guardar("ultima_carpeta_preview",
-                seleccionado.getParent());
+        //Guardar la carpeta de origen para la proxima vez
+        controlador.Preferencias.guardar("ultima_carpeta_preview", seleccionado.getParent());
 
-        //Carga la imagen y la ajusta al panel seleccionado
+        //Copiar el archivo a imagenes/previews y guardar ruta relativa
         try {
-            BufferedImage orig = ImageIO.read(seleccionado);
+            File carpetaDestino = new File("imagenes/previews");
+            carpetaDestino.mkdirs();
+            File destino = new File(carpetaDestino, seleccionado.getName());
+
+            java.nio.file.Files.copy(
+                    seleccionado.toPath(),
+                    destino.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            );
+
+            // Ruta relativa que se guardara en la BD
+            rutaNueva = "previews/" + seleccionado.getName();
+
+            //Mostrar la imagen en el panel
+            BufferedImage orig = ImageIO.read(destino);
             Image img = orig.getScaledInstance(
                     panelNueva.getWidth(), panelNueva.getHeight(), Image.SCALE_FAST);
             JLabel lbl = new JLabel(new ImageIcon(img));
@@ -628,8 +641,10 @@ public class vistaPreview extends javax.swing.JFrame {
             panelNueva.add(lbl, BorderLayout.CENTER);
             panelNueva.revalidate();
             panelNueva.repaint();
+
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(this, "No se pudo leer la imagen");
+            JOptionPane.showMessageDialog(this, "No se pudo copiar o leer la imagen");
+            rutaNueva = null;
         }
     }//GEN-LAST:event_btnElegirNuevaPreviewActionPerformed
 
