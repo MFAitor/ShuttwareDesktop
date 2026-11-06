@@ -597,7 +597,6 @@ public class vistaPreview extends javax.swing.JFrame {
         JFileChooser chooser = new JFileChooser();
         chooser.setFileFilter(new FileNameExtensionFilter(
                 "Imagenes", "jpg", "jpeg", "png"));
-
         //Cargar ultima carpeta
         String ultimaCarpeta = controlador.Preferencias.cargar("ultima_carpeta_preview", null);
         if (ultimaCarpeta != null) {
@@ -606,31 +605,24 @@ public class vistaPreview extends javax.swing.JFrame {
                 chooser.setCurrentDirectory(dir);
             }
         }
-
         if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
             return;
         }
-
         File seleccionado = chooser.getSelectedFile();
-
         //Guardar la carpeta de origen para la proxima vez
         controlador.Preferencias.guardar("ultima_carpeta_preview", seleccionado.getParent());
-
         //Copiar el archivo a imagenes/previews y guardar ruta relativa
         try {
-            File carpetaDestino = new File("imagenes/previews");
+            File carpetaDestino = controlador.RutasUtil.getCarpetaPreviews();
             carpetaDestino.mkdirs();
             File destino = new File(carpetaDestino, seleccionado.getName());
-
             java.nio.file.Files.copy(
                     seleccionado.toPath(),
                     destino.toPath(),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING
             );
-
             // Ruta relativa que se guardara en la BD
             rutaNueva = "previews/" + seleccionado.getName();
-
             //Mostrar la imagen en el panel
             BufferedImage orig = ImageIO.read(destino);
             Image img = orig.getScaledInstance(
@@ -641,7 +633,6 @@ public class vistaPreview extends javax.swing.JFrame {
             panelNueva.add(lbl, BorderLayout.CENTER);
             panelNueva.revalidate();
             panelNueva.repaint();
-
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "No se pudo copiar o leer la imagen");
             rutaNueva = null;

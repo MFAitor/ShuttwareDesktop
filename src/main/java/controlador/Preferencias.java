@@ -4,7 +4,10 @@
  */
 package controlador;
 
+import java.io.File;
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -13,23 +16,35 @@ import java.sql.*;
 //Creo la clase para guardar las preferencias del usuario en SQLite
 public class Preferencias {
 
-    private static final String DB_URL = "jdbc:sqlite:shuttware_prefs.db";
+    private static final String DB_URL;
 
     //Creacion de la tabla de preferencias
     static {
-        try (Connection conn = DriverManager.getConnection(DB_URL); Statement st = conn.createStatement()) {
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS preferencias (
-                    clave TEXT PRIMARY KEY,
-                    valor TEXT
-                )
-            """);
-        } catch (SQLException e) {
+        String appData = System.getenv("APPDATA");
+        if (appData == null) {
+            appData = System.getProperty("user.home");
+        }
+        File dir = new File(appData, "Shuttware");
+        dir.mkdirs();
+        File dbFile = new File(dir, "shuttware_prefs.db");
+        DB_URL = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+
+        try {
+            Class.forName("org.sqlite.JDBC");
+            try (Connection conn = DriverManager.getConnection(DB_URL); Statement st = conn.createStatement()) {
+                st.execute("""
+                    CREATE TABLE IF NOT EXISTS preferencias (
+                        clave TEXT PRIMARY KEY,
+                        valor TEXT
+                    )
+                """);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    //Metodo para guardar las preferencias despues de seleccionadas
+    //Metodo para guardar las preferencias seleccionadas
     public static void guardar(String clave, String valor) {
         System.out.println("GUARDANDO → " + clave + " = " + valor);
         String sql = "INSERT OR REPLACE INTO preferencias (clave, valor) VALUES (?, ?)";
@@ -37,14 +52,14 @@ public class Preferencias {
             ps.setString(1, clave);
             ps.setString(2, valor);
             ps.executeUpdate();
-            System.out.println("Guardado correctamente en: " + new java.io.File("shuttware_prefs.db").getAbsolutePath());
+            System.out.println("Guardado correctamente en: " + DB_URL);
         } catch (SQLException e) {
             System.out.println("ERROR al guardar: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    //Metodo de carga de las preferencias que se han cargado anteriormente
+    //Metodo para cargar las preferencias guardadas anteriormente
     public static String cargar(String clave, String valorPorDefecto) {
         System.out.println("CARGANDO → " + clave);
         String sql = "SELECT valor FROM preferencias WHERE clave = ?";
@@ -63,5 +78,4 @@ public class Preferencias {
         System.out.println("No encontrado, usando por defecto: " + valorPorDefecto);
         return valorPorDefecto;
     }
-
 }
