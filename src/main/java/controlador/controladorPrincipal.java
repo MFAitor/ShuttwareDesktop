@@ -663,14 +663,12 @@ public class controladorPrincipal {
 
             //Seleccion del tipo de entrega y desmarcar en caso de nulo
             String tipoEntrega = s.getTipoEntrega();
-
             vista.getButGroupTipoEntrega().clearSelection();
-
             if (tipoEntrega != null) {
                 vista.getRdLink().setSelected("link_descarga".equals(tipoEntrega));
                 vista.getRdUSB().setSelected("USB".equals(tipoEntrega));
                 vista.getRdAlbum().setSelected("album".equals(tipoEntrega));
-                vista.getRdCaja().setSelected(idioma.t("sesion.caja").equals(tipoEntrega));
+                vista.getRdCaja().setSelected("caja_personalizada".equals(tipoEntrega));
             }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, idioma.t("sesion.noficha"));
